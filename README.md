@@ -1,2 +1,2 @@
 # badge
-The OpenCitations Badge
+Badge for OpenCitation
