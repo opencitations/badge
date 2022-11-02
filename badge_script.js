@@ -2,24 +2,44 @@ var badge_conf = {
   'category': {
 
     'doi': {
-			'citations': {
+			'source': {
 					'name': 'oc_api',
-					'call': 'https://opencitations.net/index/api/v1/citation-count/[[VAR]]',
+					'call': 'https://opencitations.net/index/coci/api/v1/citation-count/[[VAR]]',
 					'format': 'json',
-		      'field': 'count',
-					'label': 'Citations',
+		      'fields': ['count'],
+					'labels': {
+						'count': 'Citations'
+					},
 		      "respects": [],
 			},
 
       //when highlighting the badge
       'onhighlighting': null,
       //when clicking on the badge
-      //'onclick_link': 'https://doi.org/[[VAR]]'
-      'onclick_link':'https://opencitations.net/index/search?text=[[VAR]]'
+      'onclick_link': 'https://opencitations.net/index/coci/browser/[[VAR]]'
     }
   }
 }
 //GLOBALS
+//var ocbadge_container = document.getElementsByClassName("__oc_badge__");
+var this_script = document.currentScript;
+var script_id = this_script.dataset.id;
+if ((script_id == "") || (script_id == undefined)){
+  script_id = "0";
+}
+
+//data inputs
+var input_value = this_script.dataset.value;
+var input_type = this_script.dataset.type;
+var input_size = this_script.dataset.size;
+if ((input_size == "") || (input_size == undefined)){
+  input_size = "110"
+}
+
+var badgehtml_id = script_id+"__badge";
+this_script.insertAdjacentHTML('afterend', '<span id="'+badgehtml_id+'" class="__oc_badge__" input="'+input_value+'" type="'+input_type+'" data-size="'+input_size+'" preview="count"></span>')
+var ocbadge_container = [document.getElementById(badgehtml_id)];
+
 
 //BADGE MODULES
 var badge = (function () {
@@ -28,13 +48,12 @@ var badge = (function () {
 
 	function init_badge_index(ocbadge_container) {
 		//init badge dict
-    var ocbadge_container = document.getElementsByClassName("__oc_badge__");
 		for (var i = 0; i < ocbadge_container.length; i++) {
 			var ocbadge_obj = ocbadge_container[i];
-      ocbadge_list.push({
-					'input': ocbadge_obj.dataset.value,
-          'type': ocbadge_obj.dataset.type,
-					'preview': ocbadge_obj.dataset.return,
+			ocbadge_list.push({
+					'input': ocbadge_obj.getAttribute('input'),
+					'preview': ocbadge_obj.getAttribute('preview'),
+					'type': ocbadge_obj.getAttribute('type'),
 					'dom_built': false
 			})
 		}
@@ -44,22 +63,20 @@ var badge = (function () {
 		for (var i = 0; i < ocbadge_list.length; i++) {
 			var ocbadge_obj = ocbadge_list[i];
 			var badge_cat = badge_conf_cat[ocbadge_obj['type']];
-      var preview_part = badge_cat[ocbadge_obj.preview];
-
-			var text_query = badge_util.build_text_query({},preview_part.call, ocbadge_obj.input);
+			var text_query = badge_util.build_text_query({},badge_cat.source.call, ocbadge_obj.input);
 			var href_onclick = badge_util.build_text_query({},badge_cat.onclick_link, ocbadge_obj.input);
 
-			var text_query_key = text_query+"[["+preview_part.field+"]]";
+			var text_query_key = text_query+"[["+ocbadge_obj['preview']+"]]";
 			badge_calls[text_query_key] = {
 				'data': null,
-				'type': ocbadge_obj.type,
-				'input': ocbadge_obj.input,
-				'preview': ocbadge_obj.preview,
-				'label': preview_part.label,
-				'name': preview_part.name,
-				'format': preview_part.format,
-				'respects': preview_part.respects,
-				'field': preview_part.field,
+				'type': ocbadge_obj['type'],
+				'input': ocbadge_obj['input'],
+				'preview': ocbadge_obj['preview'],
+				'labels': badge_cat.source.labels,
+				'name': badge_cat.source.name,
+				'format': badge_cat.source.format,
+				'respects': badge_cat.source.respects,
+				'fields': badge_cat.source.fields,
 				'onhighlighting': badge_cat.onhighlighting,
 				'onclick_link': href_onclick
 			};
@@ -71,6 +88,7 @@ var badge = (function () {
 	}
 
 	function call_service(call_url, key, def_callbk = badge_callbk) {
+
 		badge_util.httpGetAsync(call_url, key, badge_callbk);
 		/*with jquery
 		var result = {};
@@ -101,7 +119,7 @@ var badge = (function () {
 		//insert the data retrieved
 		badge_calls[result_obj.key].data = badge_util.get_values_with_rist(
 																result_obj.data,
-																call_obj.field,
+																call_obj.fields,
 																call_obj.respects);
 
 		//build the html dom now
@@ -193,14 +211,15 @@ var badge_util = (function () {
 
 			return matched_query;
 		}
-	function get_values_with_rist(dataarr_obj, field, respects, innervalue = false) {
+	function get_values_with_rist(dataarr_obj, fields, respects, innervalue = false) {
 
 			var ret_vals = {};
 			var respects_index = {};
 
 			//init both dict
-			ret_vals[field] = [];
-
+			for (var i = 0; i < fields.length; i++) {
+				ret_vals[fields[i]] = [];
+			}
 			for (var i = 0; i < respects.length; i++) {
 				if (respects[i].param in respects_index) {
 					respects_index[respects[i].param].push(respects[i].func);
@@ -274,16 +293,18 @@ var badge_htmldom = (function () {
 
 
 	function build_badge(obj_call) {
-    var ocbadge_container = document.getElementsByClassName("__oc_badge__");
 		for (var i = 0; i < ocbadge_container.length; i++) {
 			var ocbadge_obj = ocbadge_container[i];
 
-			if( (ocbadge_obj.dataset.type == obj_call.type) &&
-					(ocbadge_obj.dataset.value == obj_call.input) &&
-					(ocbadge_obj.dataset.return == obj_call.preview)
+			if( (ocbadge_obj.getAttribute('type') == obj_call.type) &&
+					(ocbadge_obj.getAttribute('input') == obj_call.input) &&
+					(ocbadge_obj.getAttribute('preview') == obj_call.preview)
 			){
 				var div_c = document.createElement("div");
-				var lbl = lbl = obj_call.label;
+				var lbl = "";
+				if (obj_call.preview in obj_call.labels) {
+					lbl = obj_call.labels[obj_call.preview];
+				}
 
         var logo_size = box_size * 0.38;
 
@@ -294,7 +315,7 @@ var badge_htmldom = (function () {
 					<td style="border: transparent;"> <img class="logo-img-oc" id="`+i+`" src="https://ivanhb.github.io/badge/img/logo.png" width="`+logo_size+`" height="`+logo_size+`" style="margin-left:4%;"> </td>
 					<td style="`+static_style+` text-align: center;" class="badge_text">
 							<a id="`+i+`" style="" class="btn btn-outline-light btn-lg" href="`+obj_call.onclick_link+`">
-							<div style="font-size: 1.45rem; display: inline-block; padding-left:2%; color: #2e5cb8;">`+lbl+`</div></br><div style="padding-right: 5%; display: inline-block;"><span class="" style="font-size: 2.1rem; color: #2e5cb8;">`+obj_call.data[obj_call.field]+`</span></div>
+							<div style="font-size: 1.45rem; display: inline-block; padding-left:2%; color: #2e5cb8;">`+lbl+`</div></br><div style="padding-right: 5%; display: inline-block;"><span class="" style="font-size: 2.1rem; color: #2e5cb8;">`+obj_call.data[obj_call.preview]+`</span></div>
 							</a>
 					</td>
 					</tr>
@@ -314,8 +335,9 @@ var badge_htmldom = (function () {
 	}
 })();
 
-window.addEventListener("load", () => {
-    //MAIN
-    badge.init_badge_index();
-    badge.get_preview_data(badge_conf.category);
-});
+
+
+
+//MAIN
+badge.init_badge_index(ocbadge_container);
+badge.get_preview_data(badge_conf.category);
