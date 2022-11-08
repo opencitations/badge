@@ -27,7 +27,6 @@ var badge = (function () {
 	function init_badge_index(this_script) {
 
     var script_id = this_script.dataset.id;
-    console.log(script_id);
     if ((script_id == "") || (script_id == undefined)){
       script_id = "0";
     }
@@ -37,19 +36,18 @@ var badge = (function () {
     var input_return = this_script.dataset.return;
     var input_style = this_script.dataset.style;
 
-    style_index = {};
+    var style_index = {};
     style_index["size"] = "110px";
-    if ((input_style == "") || (input_style == undefined)){
-      input_style.split(";");
-      for (var i = 0; i < input_style.length; i++) {
-        parts = input_style[i].split(":");
-        style_index[parts[0]] = parts[1];
+    if ((input_style != "") && (input_style != undefined)){
+      var parts = input_style.split(";");
+      for (var i = 0; i < parts.length; i++) {
+        att = parts[i].split(":");
+        style_index[att[0].trim()] = att[1].trim();
       }
-
     }
 
     var badgehtml_id = script_id+"__badge";
-    this_script.insertAdjacentHTML('afterend', '<span id="'+badgehtml_id+'" class="__oc_badge__" data-value="'+input_value+'" data-type="'+input_type+'" data-size="'+style_index["size"]+'" data-return="'+input_return+'"></span>')
+    this_script.insertAdjacentHTML('afterend', '<span id="'+badgehtml_id+'" class="__oc_badge__" data-value="'+input_value+'" data-type="'+input_type+'" data-return="'+input_return+'"></span>')
     var ocbadge_container = [document.getElementById(badgehtml_id)];
 
 		//init badge dict
@@ -60,6 +58,7 @@ var badge = (function () {
 					'input': ocbadge_obj.dataset.value,
           'type': ocbadge_obj.dataset.type,
 					'preview': ocbadge_obj.dataset.return,
+          'style': style_index,
           'id': badgehtml_id
 			})
 		}
@@ -117,7 +116,6 @@ var badge = (function () {
 																call_obj.respects);
 
 		//build the html dom now
-    //console.log(badge_calls);
 		badge_htmldom.build_badge(badge_calls[result_obj.key], ocbadge_obj);
 	}
 
@@ -267,42 +265,119 @@ var badge_util = (function () {
 
 var badge_htmldom = (function () {
 
-	//CSS RULES GLOB
-  var box_size = "110";
-  var static_style = `
-          border-top: 1px solid;
-          border-bottom: 1px solid;
-          color: #2e5cb8;
-          min-width:`+box_size+`px;
-          max-width:`+box_size+`px;
-        `;
-        //color: #2e5cb8;
-	var onmouseover = `
-        this.style.opacity='1';
-        `;
-	var onmouseout = `
-				 this.style.opacity='0.5';
-				`;
-
-
 	function build_badge(obj_call, ocbadge_obj) {
+
+        //CSS RULES GLOB
+        var color_style = "";
+        var color_hover = "";
+        var border_color = "";
+        var transparent = "rgba(0, 0, 0, 0)";
+        var box_size = 0;
+        var text_size = 0;
+        var val_size = 0;
+        var static_style = "";
+        var logo_url = "";
+        var logo_size = "";
+        var onmouseover = ``;
+        var onmouseout = ``;
+        var small_badge = [``,``,``];
+        var small_img_format = "https://raw.githubusercontent.com/opencitations/logo/master/logo-transparent.png";
+        var shadow_color = "black";
+
+
+        function _set_style(styleindex) {
+          box_size = 100;
+          if (styleindex.hasOwnProperty("size")) {
+            box_size = parseFloat(styleindex["size"]);
+          }
+
+          logo_size = box_size * 0.33;
+          logo_height = logo_size;
+          logo_width = logo_size * 1.3;
+          text_size = 0.1 * box_size;
+          val_size = 0.12 * box_size;
+          padding_size = 0.023 * box_size;
+
+          color_style = "#2e21de";
+          color_hover = "white";
+          border_color = "rgba(152, 50, 252, 0.8)";
+          border_radius = padding_size+`px `+padding_size*3+`px `+padding_size*3+`px `+padding_size+`px`;
+          logo_url = "https://raw.githubusercontent.com/opencitations/logo/master/logotype-transparent.png";
+
+          if (box_size < 35) {
+            color_style = "white";
+            color_hover = "#2e21de";
+            border_radius = padding_size*3+`px `;
+            if (styleindex.hasOwnProperty("logo")) {
+              if (styleindex["logo"] == "white") {
+                small_img_format = "https://raw.githubusercontent.com/opencitations/logo/master/logo-white.png";
+                color_style = "black";
+                color_hover = "white";
+                border_color = "white";
+                shadow_color = "white";
+              }
+            }
+            small_badge = ["display: none;","background-image: url('"+small_img_format+"'); background-size: "+box_size+"px; background-repeat: no-repeat; background-position: center;","font-size: "+0.35 * box_size+"pt; text-shadow: "+shadow_color+" -0.3px -0.3px 2px;"];
+
+            //onmouseover = `this.style.borderColor='`+color_style+`';`;
+            //onmouseout = `this.style.borderColor='`+border_color+`';`;
+          }else{
+            if (styleindex.hasOwnProperty("logo")) {
+              if (styleindex["logo"] == "white") {
+                color_style = "white";
+                color_hover = "black";
+                border_color = "white";
+                logo_url = "https://raw.githubusercontent.com/opencitations/logo/master/logotype-white.png";
+              }
+            }
+          }
+
+          static_style = `
+            padding: `+padding_size+`px;
+            border-top: `+padding_size+`px solid `+border_color+`;
+            border-bottom: `+padding_size+`px solid `+border_color+`;
+            border-radius: `+border_radius+`;
+            font-family: arial;
+            text-align: center;
+            padding-bottom: 0px;
+            padding-top: 0px;
+            transition: 0.85s;
+            width:`+box_size+`px;
+            height:`+box_size*0.7+`px;
+          `;
+
+          onmouseover = `this.style.borderColor='`+color_style+`'; this.style.backgroundColor='`+color_style+`'; this.querySelector('.prev-lbl').style.color='`+color_hover+`'; this.querySelector('.prev-value').style.color='`+color_hover+`';`;
+          onmouseout = `this.style.borderColor='`+border_color+`'; this.style.backgroundColor='`+transparent+`'; this.querySelector('.prev-lbl').style.color='`+color_style+`'; this.querySelector('.prev-value').style.color='`+color_style+`';`;
+        }
+        /*
+        min-width:`+box_size*0.6+`px;
+        max-width:`+box_size+`px;
+        */
+
+        var style_index = {};
+        if (ocbadge_obj.hasOwnProperty("style")) {
+          style_index = ocbadge_obj["style"];
+        }
+        _set_style(style_index);
 
 				var div_c = document.createElement("div");
 				var lbl = lbl = obj_call.label;
 
-        var logo_size = box_size * 0.38;
 
 				div_c.innerHTML =
 				`
-				<table id="badge_content" style="display:block; opacity: 0.5;" onmouseover="`+onmouseover+`" onmouseout="`+onmouseout+`">
-					<tr style="">
-					<td style="border: transparent;"> <img class="logo-img-oc" id="`+ocbadge_obj.id+`" src="https://ivanhb.github.io/badge/img/logo.png" width="`+logo_size+`" height="`+logo_size+`" style="margin-left:4%;"> </td>
-					<td style="`+static_style+` text-align: center;" class="badge_text">
-							<a id="`+ocbadge_obj.id+`" style="" class="btn btn-outline-light btn-lg" href="`+obj_call.onclick_link+`">
-							<div style="font-size: 1.45rem; display: inline-block; padding-left:2%; color: #2e5cb8;">`+lbl+`</div></br><div style="padding-right: 5%; display: inline-block;"><span class="" style="font-size: 2.1rem; color: #2e5cb8;">`+obj_call.data[obj_call.field]+`</span></div>
-							</a>
-					</td>
-					</tr>
+				<table id="`+ocbadge_obj.id+`" class="__oc_block__" style="display:block;">
+          <tbody style="`+small_badge[1]+`">
+            <tr style="height: 0px;">
+    					<td style="border: transparent; height: 0px; `+small_badge[0]+`"> <img class="__oc_logo__" id="`+ocbadge_obj.id+`" src="`+logo_url+`" width="`+logo_width+`" height="`+logo_size+`" style="margin-left:`+padding_size*3+`px; padding-top: `+padding_size*2+`px;"> </td>
+    					<td id="`+ocbadge_obj.id+`" class="__oc_text__" style="`+static_style+`" onmouseover="`+onmouseover+`" onmouseout="`+onmouseout+`">
+    							<a id="`+ocbadge_obj.id+`" style="text-decoration: none; height: 0px;" href="`+obj_call.onclick_link+`" >
+    							       <div class="prev-lbl" style="transition: 0.85s; color: `+color_style+`; font-size: `+text_size+`pt; padding-left:2%; `+small_badge[0]+`">`+lbl+`</div>
+                         <div class="prev-value" style="transition: 0.85s; color: `+color_style+`; font-size: `+val_size+`pt; `+small_badge[2]+`">`+obj_call.data[obj_call.field]+`</div>
+    							</a>
+    					</td>
+  					</tr>
+          <tbody>
 				</table>
 				`;
 
