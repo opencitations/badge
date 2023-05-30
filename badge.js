@@ -9,7 +9,7 @@ var badge = (function () {
   					'call': 'https://opencitations.net/index/api/v1/citation-count/[[VAR]]',
   					'format': 'json',
   		      'field': 'count',
-  					'label': 'Citations',
+  					'label': '',
   		      "respects": [],
   			},
 
@@ -284,16 +284,30 @@ var badge_htmldom = (function () {
         var onmouseover = ``;
         var onmouseout = ``;
         var small_badge = [``,``,``];
-        var small_img_format = "https://raw.githubusercontent.com/opencitations/logo/master/logo-transparent.png";
+        var small_img_format = "https://raw.githubusercontent.com/opencitations/logo/master/logo-title-transparent.svg";
         var shadow_color = "black";
         var border_style = "";
 
 
         function _set_style(styleindex) {
-          box_size = 120;
+          box_size = "200";
+
           if (styleindex.hasOwnProperty("size")) {
-            box_size = parseFloat(styleindex["size"]);
+            if (styleindex["size"] == "xsmall") {
+              box_size = "50";
+            }else if (styleindex["size"] == "small") {
+              box_size = "100";
+            }else if (styleindex["size"] == "normal") {
+              box_size = "200";
+            }else if (styleindex["size"] == "large") {
+              box_size = "300";
+            }else if (styleindex["size"] == "xlarge") {
+              box_size = "400";
+            }else {
+              box_size = parseFloat(styleindex["size"]);
+            }
           }
+
           if (styleindex.hasOwnProperty("type")) {
             logo_type = styleindex["type"];
           }
@@ -303,7 +317,7 @@ var badge_htmldom = (function () {
           logo_height = logo_size;
           logo_width = logo_size * 1.3;
 
-          text_size = 0.28 * box_size;
+          text_size = 0.15 * box_size;
           val_size = 0.33 * box_size;
           padding_size = 0.023 * box_size;
 
@@ -311,7 +325,7 @@ var badge_htmldom = (function () {
           color_hover = "white";
           border_color = "rgba(152, 50, 252, 0.8)";
           border_radius = padding_size+`px `+padding_size*3+`px `+padding_size*3+`px `+padding_size+`px`;
-          logo_url = "https://raw.githubusercontent.com/opencitations/logo/master/logotype-transparent.png";
+          logo_url = "https://raw.githubusercontent.com/opencitations/logo/master/logo-title-transparent.svg";
 
           if ((box_size < 80) || (logo_type == "small")) {
             color_style = "white";
@@ -320,7 +334,7 @@ var badge_htmldom = (function () {
             border_style = "none";
             if (styleindex.hasOwnProperty("logo")) {
               if (styleindex["logo"] == "white") {
-                small_img_format = "https://raw.githubusercontent.com/opencitations/logo/master/logo-white.png";
+                small_img_format = "https://raw.githubusercontent.com/opencitations/logo/master/logo-title-white-transparent.svg";
                 color_style = "black";
                 color_hover = "white";
                 border_color = "white";
@@ -337,29 +351,26 @@ var badge_htmldom = (function () {
                 color_style = "white";
                 color_hover = "black";
                 border_color = "white";
-                logo_url = "https://raw.githubusercontent.com/opencitations/logo/master/logotype-white.png";
+                logo_url = "https://raw.githubusercontent.com/opencitations/logo/master/logo-title-white-transparent.svg";
               }
             }
           }
 
           static_style = `
-            padding: `+padding_size+`px;
-            border-top: `+padding_size+`px solid `+border_color+`;
-            border-bottom: `+padding_size+`px solid `+border_color+`;
-            border-radius: `+border_radius+`;
-            border: `+border_style+`;
-            font-family: arial;
             text-align: center;
-            padding-bottom: 5px;
-            padding-top: 5px;
-            padding-right: 5px;
-            transition: 0.85s;
-            width:`+box_size+`px;
-            height:`+box_size*0.7+`px;
           `;
 
-          onmouseover = `this.style.borderColor='`+color_style+`'; this.style.backgroundColor='`+color_style+`'; this.querySelector('.prev-lbl').style.color='`+color_hover+`'; this.querySelector('.prev-value').style.color='`+color_hover+`';`;
-          onmouseout = `this.style.borderColor='`+border_color+`'; this.style.backgroundColor='`+transparent+`'; this.querySelector('.prev-lbl').style.color='`+color_style+`'; this.querySelector('.prev-value').style.color='`+color_style+`';`;
+          text_style = `
+            text-decoration: none;
+            font-weight: normal;
+            color: rgb(45,33,222)!important;
+            font-size: `+text_size+`px!important;
+            font-family: 'Trebuchet MS', sans-serif;
+            transition: 0.85s;
+          `
+
+          onmouseover = ``;
+          onmouseout = ``;
         }
         /*
         min-width:`+box_size*0.6+`px;
@@ -379,16 +390,19 @@ var badge_htmldom = (function () {
 				div_c.innerHTML =
 				`
 				<table id="`+ocbadge_obj.id+`" class="__oc_block__" style="display:block;">
-          <tbody style="`+small_badge[1]+`">
-            <tr style="height: 0px;">
-    					<td style="border: transparent; height: 0px; `+small_badge[0]+`"> <img class="__oc_logo__" id="`+ocbadge_obj.id+`" src="`+logo_url+`" width="`+logo_width+`" height="`+logo_height+`" style="margin-left:`+padding_size*3+`px; padding-top: `+padding_size*2+`px;"> </td>
-    					<td id="`+ocbadge_obj.id+`" class="__oc_text__" style="`+static_style+`" onmouseover="`+onmouseover+`" onmouseout="`+onmouseout+`">
-    							<a id="`+ocbadge_obj.id+`" style="text-decoration: none; height: 0px;" href="`+obj_call.onclick_link+`" >
-    							       <div class="prev-lbl" style="transition: 0.85s; color: `+color_style+`; font-size: `+text_size+`px; padding-left:2%; `+small_badge[0]+`">`+lbl+`</div>
-                         <div class="prev-value" style="transition: 0.85s; color: `+color_style+`; font-size: `+val_size+`px; `+small_badge[2]+`">`+obj_call.data[obj_call.field]+`</div>
-    							</a>
-    					</td>
-  					</tr>
+          <tbody>
+            <tr>
+              <td class="__oc_text__" style="`+static_style+`" onmouseover="`+onmouseover+`" onmouseout="`+onmouseout+`">
+                  <a id="`+ocbadge_obj.id+`" style="`+text_style+`" href="`+obj_call.onclick_link+`" >
+                        <span style="left:0; font-size:`+text_size*0.75+`px">&ldquo;</span>
+                        <span>`+obj_call.data[obj_call.field]+`</span>
+                        <span style="right:0; font-size:`+text_size*0.75+`px">&rdquo;</span>
+                  </a>
+              </td>
+            </tr>
+            <tr>
+              <td><img class="__oc_logo__" id="`+ocbadge_obj.id+`" src="`+logo_url+`" width="`+logo_width+`" height="auto"></td>
+            </tr>
           <tbody>
 				</table>
 				`;
